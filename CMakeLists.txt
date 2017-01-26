@@ -51,4 +51,4 @@ add_custom_target(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(${PROJECT_NAME} ${SRC_LIST} src/Rainbow.cpp src/Rainbow.h src/Confetti.cpp src/Confetti.h src/Sinelon.cpp src/Sinelon.h src/patterns.h src/AbstractPattern.cpp src/Noise.cpp src/Noise.h src/MotionLight.cpp src/MotionLight.h)
+add_executable(${PROJECT_NAME} ${SRC_LIST} src/AnnounceHour.cpp src/AnnounceHour.h src/TestPattern.cpp src/TestPattern.h src/FirePattern.cpp src/FirePattern.h src/FireOnFireEscape.cpp src/FireOnFireEscape.h)

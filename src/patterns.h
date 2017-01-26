@@ -11,5 +11,8 @@
 #include "Sinelon.h"
 #include "Noise.h"
 #include "MotionLight.h"
+#include "AnnounceHour.h"
+#include "TestPattern.h"
+#include "FireOnFireEscape.h"
 
 #endif //NEOPIXELLEDCONTROLLER_PATTERNS_H
