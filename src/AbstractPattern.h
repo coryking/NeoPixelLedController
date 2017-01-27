@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include <FastLED.h>
 
-#define DEFAULT_DURATION 15 * 1000
+#define DEFAULT_DURATION 45 * 1000
 
 #define CORNER_1 38
 #define CORNER_2 (38 + 95)

@@ -4,12 +4,15 @@
 #include <FastLED.h>
 #include <vector>
 #include "patterns.h"
+#include <Hash.h>
 
-#include <TimeLib.h>
 #include <TimeAlarms.h>
 #include "WifiConfig.h"
 #include <NtpClientLib.h>
 #include <ESP8266WiFi.h>
+#include <ArduinoOTA.h>
+#include <ESP8266mDNS.h>
+#include <ESPAsyncWebServer.h>
 
 FASTLED_USING_NAMESPACE
 
@@ -31,10 +34,22 @@ FASTLED_USING_NAMESPACE
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
 #define NUM_LEDS    171
-#define BRIGHTNESS          255
+#define BRIGHTNESS          64
 #define FRAMES_PER_SECOND  120
 
 #define TRANSITION_DURATION 2000
+
+#define MAX_TIME_BETWEEN_GLITTER 45
+#define MIN_TIME_BETWEEN_GLITTER 5
+#define MAX_TIME_FOR_GLITTER_SEC 45
+#define MIN_TIME_FOR_GLITTER_SEC 5
+
+void startGlitterMode();
+
+bool gIsPowerOn = true;
+bool gIsPoweredOff = false;
+
+char hostString[16] = {0};
 
 CRGB leds[NUM_LEDS];
 CRGB targetLeds[NUM_LEDS];
@@ -45,6 +60,9 @@ ulong startTransitionTime;
 std::vector<AbstractPattern *> gPatterns;
 AbstractPattern * gCurrentPattern = NULL;
 AbstractPattern * gTargetPattern = NULL;
+
+AsyncWebServer server(80);
+
 
 AbstractPattern* nextPattern()
 {
@@ -69,6 +87,8 @@ void setAlarms() {
         Alarm.alarmRepeat(i,0,0,announceHour);
         Alarm.alarmRepeat(i,30,0, announceHour);
     }
+    Alarm.timerOnce(random(1, 10), startGlitterMode);
+
 }
 
 void onSTAGotIP(WiFiEventStationModeGotIP ipInfo) {
@@ -96,6 +116,24 @@ void onNTPSyncEvent(NTPSyncEvent_t ntpEvent) {
     }
 }
 
+void setupWebServer() {
+
+    Serial.println("Setting up Web Server...");
+    ArRequestHandlerFunction onPowerOnHandler = [](AsyncWebServerRequest *request){
+        gIsPowerOn = true;
+        request->send(200, "text/json", "{'power':true}");
+    };
+    server.on("/power/on", HTTP_GET, onPowerOnHandler);
+
+    ArRequestHandlerFunction onPowerOffHandler = [](AsyncWebServerRequest *request){
+        gIsPowerOn = false;
+        request->send(200, "text/json", "{'power':false}");
+    };
+    server.on("/power/off", HTTP_GET, onPowerOffHandler);
+    server.begin();
+    Serial.println("Web Server Running...");
+}
+
 void setupWiFi() {
     static WiFiEventHandler e1, e2;
 
@@ -112,11 +150,43 @@ void setupWiFi() {
 
 }
 
-void setup() {
-    Serial.begin(9600);
-    setupWiFi();
-    delay(3000); // 3 second delay for recovery
-    //gPatterns.push_back(new MotionLight(NUM_LEDS));
+bool gGlitterMode = false;
+
+void endGlitterMode() {
+    Serial.println("End Glitter Mode");
+    gGlitterMode = false;
+    Alarm.timerOnce(random(MIN_TIME_BETWEEN_GLITTER, MAX_TIME_BETWEEN_GLITTER), startGlitterMode);
+}
+
+void startGlitterMode() {
+    Serial.println("Start Glitter mode");
+    gGlitterMode = true;
+    Alarm.timerOnce(random(MIN_TIME_FOR_GLITTER_SEC, MAX_TIME_FOR_GLITTER_SEC), endGlitterMode);
+}
+
+void addGlitter( fract8 chanceOfGlitter)
+{
+    if( random8() < chanceOfGlitter) {
+        leds[ random16(NUM_LEDS) ] += CRGB::White;
+    }
+}
+
+void setupMDNS() {
+    if (!MDNS.begin(hostString)) {
+        Serial.println("Error setting up MDNS responder!");
+    }
+    Serial.println("mDNS responder started");
+
+    char instanceName[30] = {0};
+    sprintf(instanceName, "LED Controller@%06X", ESP.getChipId());
+    MDNS.setInstanceName(instanceName);
+    MDNS.addService("http","tcp",80);
+    MDNS.addService("stripled", "tcp", 8080);
+    MDNS.addServiceTxt("http", "tcp", "type", "strip_led");
+
+}
+
+void setupFastLed() {//gPatterns.push_back(new MotionLight(NUM_LEDS));
     gPatterns.push_back(new Rainbow(NUM_LEDS));
     gPatterns.push_back(new FireOnFireEscape(NUM_LEDS));
     //gPatterns.push_back(new Sinelon(NUM_LEDS));
@@ -130,11 +200,33 @@ void setup() {
     // set master brightness control
     FastLED.setBrightness(BRIGHTNESS);
     gCurrentPattern = new TestPattern(NUM_LEDS);
-    setAlarms();
 }
 
-void loop()
-{
+void setup() {
+    sprintf(hostString, "ESP_%06X", ESP.getChipId());
+
+    Serial.begin(9600);
+    setupWiFi();
+
+    Serial.print("Waiting for Wifi");
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println("");
+    Serial.println("WiFi connected");
+
+    delay(3000); // 3 second delay for recoverysetupFastLed();
+
+    setAlarms();
+    ArduinoOTA.begin();
+
+    setupMDNS();
+    setupWebServer();
+    setupFastLed();
+}
+
+void renderFrame() {
     ulong currentTime = millis();
     if(!gCurrentPattern) gCurrentPattern = nextPattern();
 
@@ -142,21 +234,46 @@ void loop()
     gCurrentPattern->readFrame(leds, currentTime);
 
     if(gTargetPattern) {
-        const ulong blend_amount = map(currentTime, startTransitionTime, startTransitionTime + TRANSITION_DURATION, 0, 255);
-        gTargetPattern->readFrame(targetLeds, currentTime);
-        nblend(leds, targetLeds, NUM_LEDS, blend_amount);
         if(currentTime > startTransitionTime + TRANSITION_DURATION) {
+            // gotta black out the buffer....
+            fill_solid(leds, NUM_LEDS, CRGB::Black);
+            gTargetPattern->readFrame(leds, currentTime);
             gCurrentPattern = gTargetPattern;
             gCurrentPattern->resetRuntime();
             gTargetPattern = NULL;
+        } else {
+            const ulong blend_amount = map(currentTime, startTransitionTime, startTransitionTime + TRANSITION_DURATION, 0, 255);
+            gTargetPattern->readFrame(targetLeds, currentTime);
+            nblend(leds, targetLeds, NUM_LEDS, blend_amount);
         }
     } else if(gCurrentPattern->canStop()) {
         startTransitionTime = currentTime;
         gTargetPattern = nextPattern();
         fill_solid(targetLeds, NUM_LEDS, CRGB::Black);
     }
-    // send the 'leds' array out to the actual LED strip
-    FastLED.show();
+
+    if(gGlitterMode) {
+        addGlitter(80);
+    }
+}
+
+void loop()
+{
+    Alarm.delay(0);
+    if(gIsPowerOn) {
+        gIsPoweredOff=false;
+        renderFrame();
+
+        // send the 'leds' array out to the actual LED strip
+        FastLED.show();
+
+    } else {
+        if(!gIsPoweredOff) {
+            fill_solid(leds,NUM_LEDS,CRGB::Black);
+            FastLED.show();
+            gIsPoweredOff = true;
+        }
+    }
 
     // insert a delay to keep the framerate modest
     FastLED.delay(1000/FRAMES_PER_SECOND);
