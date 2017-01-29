@@ -294,6 +294,12 @@
 		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/Noise.h">
 			<Option target="NeoPixelLedController"/>
 		</Unit>
+		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/PalettePattern.cpp">
+			<Option target="NeoPixelLedController"/>
+		</Unit>
+		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/PalettePattern.h">
+			<Option target="NeoPixelLedController"/>
+		</Unit>
 		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/Rainbow.cpp">
 			<Option target="NeoPixelLedController"/>
 		</Unit>

@@ -14,5 +14,6 @@
 #include "AnnounceHour.h"
 #include "TestPattern.h"
 #include "FireOnFireEscape.h"
+#include "PalettePattern.h"
 
 #endif //NEOPIXELLEDCONTROLLER_PATTERNS_H

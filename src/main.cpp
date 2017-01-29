@@ -34,12 +34,12 @@ FASTLED_USING_NAMESPACE
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
 #define NUM_LEDS    171
-#define BRIGHTNESS          64
+#define BRIGHTNESS          255
 #define FRAMES_PER_SECOND  120
 
 #define TRANSITION_DURATION 2000
 
-#define MAX_TIME_BETWEEN_GLITTER 45
+#define MAX_TIME_BETWEEN_GLITTER 300
 #define MIN_TIME_BETWEEN_GLITTER 5
 #define MAX_TIME_FOR_GLITTER_SEC 45
 #define MIN_TIME_FOR_GLITTER_SEC 5
@@ -130,6 +130,13 @@ void setupWebServer() {
         request->send(200, "text/json", "{'power':false}");
     };
     server.on("/power/off", HTTP_GET, onPowerOffHandler);
+
+    ArRequestHandlerFunction onBrightnessHandler = [](AsyncWebServerRequest *request){
+        AsyncWebParameter* param = request->getParam("brightness");
+        FastLED.setBrightness(param->value().toInt());
+        request->send(200, "text/json", "{}");
+    };
+    server.on("/brightness", HTTP_GET, onBrightnessHandler);
     server.begin();
     Serial.println("Web Server Running...");
 }
@@ -187,11 +194,12 @@ void setupMDNS() {
 }
 
 void setupFastLed() {//gPatterns.push_back(new MotionLight(NUM_LEDS));
-    gPatterns.push_back(new Rainbow(NUM_LEDS));
-    gPatterns.push_back(new FireOnFireEscape(NUM_LEDS));
+    //gPatterns.push_back(new Rainbow(NUM_LEDS));
+    //gPatterns.push_back(new FireOnFireEscape(NUM_LEDS));
     //gPatterns.push_back(new Sinelon(NUM_LEDS));
     //gPatterns.push_back(new Confetti(NUM_LEDS));
-    gPatterns.push_back(new Noise(NUM_LEDS));
+    gPatterns.push_back(new PalettePattern(NUM_LEDS));
+    //gPatterns.push_back(new Noise(NUM_LEDS));
 
     // tell FastLED about the LED strip configuration
     FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
