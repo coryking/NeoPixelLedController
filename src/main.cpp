@@ -193,6 +193,7 @@ void setupFastLed() {//gPatterns.push_back(new MotionLight(NUM_LEDS));
     gPatterns.push_back(new Sinelon(NUM_LEDS));
     gPatterns.push_back(new Confetti(NUM_LEDS));
     gPatterns.push_back(new FireOnFireEscape<PalettePattern>(NUM_LEDS));
+    gPatterns.push_back(new FireOnFireEscape<RainbowFirePattern>(NUM_LEDS));
     gPatterns.push_back(new Noise(NUM_LEDS));
     gPatterns.push_back(new JugglePattern(NUM_LEDS));
     gPatterns.push_back(new RollingPattern(NUM_LEDS));
