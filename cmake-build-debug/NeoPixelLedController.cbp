@@ -264,6 +264,9 @@
 		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/AnnounceHour.h">
 			<Option target="NeoPixelLedController"/>
 		</Unit>
+		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/BpmPattern.h">
+			<Option target="NeoPixelLedController"/>
+		</Unit>
 		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/Confetti.cpp">
 			<Option target="NeoPixelLedController"/>
 		</Unit>
@@ -280,6 +283,9 @@
 			<Option target="NeoPixelLedController"/>
 		</Unit>
 		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/FirePattern.h">
+			<Option target="NeoPixelLedController"/>
+		</Unit>
+		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/JugglePattern.h">
 			<Option target="NeoPixelLedController"/>
 		</Unit>
 		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/MotionLight.cpp">
@@ -304,6 +310,12 @@
 			<Option target="NeoPixelLedController"/>
 		</Unit>
 		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/Rainbow.h">
+			<Option target="NeoPixelLedController"/>
+		</Unit>
+		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/ReversablePattern.h">
+			<Option target="NeoPixelLedController"/>
+		</Unit>
+		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/RollingPattern.h">
 			<Option target="NeoPixelLedController"/>
 		</Unit>
 		<Unit filename="/Users/cory/ClionProjects/NeoPixelLedController/src/Sinelon.cpp">

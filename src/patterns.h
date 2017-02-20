@@ -15,5 +15,8 @@
 #include "TestPattern.h"
 #include "FireOnFireEscape.h"
 #include "PalettePattern.h"
+#include "JugglePattern.h"
+#include "BpmPattern.h"
+#include "RollingPattern.h"
 
 #endif //NEOPIXELLEDCONTROLLER_PATTERNS_H

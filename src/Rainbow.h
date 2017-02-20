@@ -7,15 +7,11 @@
 
 #include "AbstractPattern.h"
 
-class Rainbow: public AbstractPattern {
+class Rainbow: public HuePattern {
 public:
     Rainbow(uint16 numLeds);
 
     virtual uint16_t readFrame(CRGB *buffer, ulong time);
-
-protected:
-    uint8_t gHue = 0; // rotating "base color" used by many of the patterns
-
 };
 
 #endif //NEOPIXELLEDCONTROLLER_RAINBOW_H

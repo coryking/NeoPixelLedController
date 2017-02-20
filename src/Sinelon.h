@@ -8,10 +8,7 @@
 #include <FastLED.h>
 #include "AbstractPattern.h"
 
-class Sinelon : public AbstractPattern {
-protected:
-    uint8_t gHue = 0; // rotating "base color" used by many of the patterns
-
+class Sinelon : public HuePattern {
 public:
     uint16_t readFrame(CRGB *buffer, ulong time);
 

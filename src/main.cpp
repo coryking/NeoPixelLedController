@@ -16,15 +16,6 @@
 
 FASTLED_USING_NAMESPACE
 
-// FastLED "100-lines-of-code" demo reel, showing just a few
-// of the kinds of animation patterns you can quickly and easily
-// compose using FastLED.
-//
-// This example also shows one easy way to define multiple
-// animations patterns and have them automatically rotate.
-//
-// -Mark Kriegsman, December 2014
-
 #if defined(FASTLED_VERSION) && (FASTLED_VERSION < 3001000)
 #warning "Requires FastLED 3.1 or later; check github for latest code."
 #endif
@@ -66,13 +57,9 @@ AsyncWebServer server(80);
 
 AbstractPattern* nextPattern()
 {
-    static uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
-
-    // add one to the current pattern number, and wrap around at the end
-    gCurrentPatternNumber = (gCurrentPatternNumber + 1) % gPatterns.size();
-
-    gPatterns[gCurrentPatternNumber]->resetRuntime();
-    return gPatterns[gCurrentPatternNumber];
+    uint8_t pattern = random(0, gPatterns.size());
+    gPatterns[pattern]->resetRuntime();
+    return gPatterns[pattern];
 }
 
 
@@ -87,6 +74,12 @@ void setAlarms() {
         Alarm.alarmRepeat(i,0,0,announceHour);
         Alarm.alarmRepeat(i,30,0, announceHour);
     }
+    Alarm.alarmRepeat(12,0,0, [](){
+        FastLED.setBrightness(255);
+    });
+    Alarm.alarmRepeat(22,0,0, [](){
+        FastLED.setBrightness(128);
+    });
     Alarm.timerOnce(random(1, 10), startGlitterMode);
 
 }
@@ -194,16 +187,18 @@ void setupMDNS() {
 }
 
 void setupFastLed() {//gPatterns.push_back(new MotionLight(NUM_LEDS));
-    //gPatterns.push_back(new Rainbow(NUM_LEDS));
-    //gPatterns.push_back(new FireOnFireEscape(NUM_LEDS));
-    //gPatterns.push_back(new Sinelon(NUM_LEDS));
-    //gPatterns.push_back(new Confetti(NUM_LEDS));
-    gPatterns.push_back(new PalettePattern(NUM_LEDS));
-    //gPatterns.push_back(new Noise(NUM_LEDS));
+
+    gPatterns.push_back(new Rainbow(NUM_LEDS));
+    gPatterns.push_back(new FireOnFireEscape<FirePattern>(NUM_LEDS));
+    gPatterns.push_back(new Sinelon(NUM_LEDS));
+    gPatterns.push_back(new Confetti(NUM_LEDS));
+    gPatterns.push_back(new FireOnFireEscape<PalettePattern>(NUM_LEDS));
+    gPatterns.push_back(new Noise(NUM_LEDS));
+    gPatterns.push_back(new JugglePattern(NUM_LEDS));
+    gPatterns.push_back(new RollingPattern(NUM_LEDS));
 
     // tell FastLED about the LED strip configuration
     FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-    //FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
 
     // set master brightness control
     FastLED.setBrightness(BRIGHTNESS);
@@ -224,14 +219,18 @@ void setup() {
     Serial.println("");
     Serial.println("WiFi connected");
 
-    delay(3000); // 3 second delay for recoverysetupFastLed();
-
-    setAlarms();
-    ArduinoOTA.begin();
+    delay(3000);
 
     setupMDNS();
     setupWebServer();
     setupFastLed();
+    ArduinoOTA.begin();
+    setAlarms();
+    NTP.setTimeZone(-8);
+    setSyncProvider([]()->time_t {
+        NTP.getTime();
+    });
+
 }
 
 void renderFrame() {
@@ -255,9 +254,12 @@ void renderFrame() {
             nblend(leds, targetLeds, NUM_LEDS, blend_amount);
         }
     } else if(gCurrentPattern->canStop()) {
-        startTransitionTime = currentTime;
-        gTargetPattern = nextPattern();
-        fill_solid(targetLeds, NUM_LEDS, CRGB::Black);
+        AbstractPattern* theNextPattern = nextPattern();
+        if(theNextPattern != gCurrentPattern) {
+            startTransitionTime = currentTime;
+            gTargetPattern = theNextPattern;
+            fill_solid(targetLeds, NUM_LEDS, CRGB::Black);
+        }
     }
 
     if(gGlitterMode) {

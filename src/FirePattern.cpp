@@ -35,11 +35,8 @@ uint16_t FirePattern::readFrame(CRGB *buffer, ulong time) {
     }
 }
 
-FirePattern::FirePattern(uint16 numLeds) : FirePattern::FirePattern(numLeds, false) {
-}
 
-FirePattern::FirePattern(uint16 numLeds, bool reverseDirection) : AbstractPattern(numLeds) {
-    this->gReverseDirection = reverseDirection;
+FirePattern::FirePattern(uint16 numLeds, bool reverseDirection) : ReversablePattern(numLeds, reverseDirection) {
     heat = (byte *) malloc(getNumLeds() * sizeof(byte));
 
 }

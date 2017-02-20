@@ -5,7 +5,7 @@
 #include "Sinelon.h"
 
 uint16_t Sinelon::readFrame(CRGB *buffer, ulong time) {
-    EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
+    HuePattern::readFrame(buffer, time);
 
     // a colored dot sweeping back and forth, with fading trails
     fadeToBlackBy( buffer, getNumLeds(), 20);
@@ -14,6 +14,7 @@ uint16_t Sinelon::readFrame(CRGB *buffer, ulong time) {
     return getNumLeds();
 }
 
-Sinelon::Sinelon(uint16 numLeds) : AbstractPattern(numLeds) {
+Sinelon::Sinelon(uint16 numLeds) : HuePattern(numLeds) {
+
 }
 

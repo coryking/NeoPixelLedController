@@ -15,11 +15,9 @@
 // Additionally, you can manually define your own color palettes, or you can write
 // code that creates color palettes on the fly.  All are shown here.
 
-void PalettePattern::ChangePalettePeriodically()
+void PalettePattern::ChangePalettePeriodically(ulong time)
 {
-    uint8_t secondHand = (millis() / 2000) % 60;
-    static uint8_t lastSecond = 99;
-
+    uint8_t secondHand = (time / 2000) % 60;
     if( lastSecond != secondHand) {
         lastSecond = secondHand;
         if( secondHand ==  0)  { currentPalette = RainbowColors_p;         currentBlending = LINEARBLEND; }
@@ -37,21 +35,22 @@ void PalettePattern::ChangePalettePeriodically()
 }
 
 uint16_t PalettePattern::readFrame(CRGB *buffer, ulong time) {
-    ChangePalettePeriodically();
+    ChangePalettePeriodically(time);
 
     startIndex = startIndex + 1; /* motion speed */
     int colorIndex = startIndex;
     uint8_t brightness = 255;
 
     for( int i = 0; i < getNumLeds(); i++) {
-        buffer[i] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+        uint16  idx = gReverseDirection ? ((getNumLeds() - 1) - i) : i;
+        buffer[idx] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
         colorIndex += 3;
     }
 }
 
-PalettePattern::PalettePattern(uint16 numLeds) : AbstractPattern(numLeds) {
-
+PalettePattern::PalettePattern(uint16 numLeds, bool reverseDirection) : ReversablePattern(numLeds, reverseDirection) {
 }
+
 
 // This function fills the palette with totally random colors.
 void PalettePattern::SetupTotallyRandomPalette()
@@ -117,7 +116,6 @@ const TProgmemPalette16 PalettePattern::myRedWhiteBluePalette_p PROGMEM =
                 CRGB::Black,
                 CRGB::Black
         };
-
 
 
 // Additionl notes on FastLED compact palettes:

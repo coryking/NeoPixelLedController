@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include <FastLED.h>
 
-#define DEFAULT_DURATION 45 * 1000
+#define DEFAULT_DURATION 3 * 60 * 1000
 
 #define CORNER_1 38
 #define CORNER_2 (38 + 95)
@@ -48,6 +48,21 @@ public:
          */
     virtual uint16_t getMinRuntime() {
         return DEFAULT_DURATION;
+    }
+};
+
+class HuePattern : public AbstractPattern {
+protected:
+    uint8_t gHue = 0; // rotating "base color" used by many of the patterns
+public:
+    virtual uint16_t readFrame(CRGB *buffer, ulong time) {
+        EVERY_N_MILLISECONDS(20) {
+            gHue++;
+        }
+    }
+
+    HuePattern(uint16 numLeds) : AbstractPattern(numLeds) {
+        gHue = random(0,255);
     }
 };
 

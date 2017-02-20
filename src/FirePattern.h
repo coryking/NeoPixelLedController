@@ -7,6 +7,7 @@
 
 
 #include "AbstractPattern.h"
+#include "ReversablePattern.h"
 
 #define FOFE_COOLING  55
 
@@ -16,12 +17,10 @@
 #define FOFE_SPARKING 120
 
 
-class FirePattern : public AbstractPattern {
+class FirePattern : public ReversablePattern {
 private:
     byte* heat;
-    bool gReverseDirection;
 public:
-    FirePattern(uint16 numLeds);
     FirePattern(uint16 numLeds, bool reverseDirection);
 
     virtual ~FirePattern();
