@@ -242,6 +242,7 @@ void renderFrame() {
 
     if(gTargetPattern) {
         if(currentTime > startTransitionTime + TRANSITION_DURATION) {
+            // we are at the end of the transition...
             // gotta black out the buffer....
             fill_solid(leds, NUM_LEDS, CRGB::Black);
             gTargetPattern->readFrame(leds, currentTime);
@@ -249,9 +250,19 @@ void renderFrame() {
             gCurrentPattern->resetRuntime();
             gTargetPattern = NULL;
         } else {
-            const ulong blend_amount = map(currentTime, startTransitionTime, startTransitionTime + TRANSITION_DURATION, 0, 255);
             gTargetPattern->readFrame(targetLeds, currentTime);
-            nblend(leds, targetLeds, NUM_LEDS, blend_amount);
+
+            if(currentTime > startTransitionTime + TRANSITION_DURATION / 2) {
+                // we need to fade out the original...
+                const ulong fade_out_amount = map(currentTime + TRANSITION_DURATION / 2, startTransitionTime, startTransitionTime + TRANSITION_DURATION /2 , 0, 255);
+                fadeToBlackBy(leds, NUM_LEDS, fade_out_amount);
+            } else {
+                // we need to fade in the new guy....
+                const ulong fade_in_amount = map(currentTime, startTransitionTime, startTransitionTime + TRANSITION_DURATION /2 , 0, 255);
+                fadeToBlackBy(targetLeds, NUM_LEDS, 255 - fade_in_amount);
+            }
+
+            nblend(leds, targetLeds, NUM_LEDS, 255);
         }
     } else if(gCurrentPattern->canStop()) {
         AbstractPattern* theNextPattern = nextPattern();
