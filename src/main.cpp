@@ -13,6 +13,7 @@
 #include <ArduinoOTA.h>
 #include <ESP8266mDNS.h>
 #include <ESPAsyncWebServer.h>
+#include <PubSubClient.h>
 
 FASTLED_USING_NAMESPACE
 
@@ -28,12 +29,16 @@ FASTLED_USING_NAMESPACE
 #define BRIGHTNESS          255
 #define FRAMES_PER_SECOND  120
 
-#define TRANSITION_DURATION 2000
+#define TRANSITION_DURATION 4000
 
 #define MAX_TIME_BETWEEN_GLITTER 300
 #define MIN_TIME_BETWEEN_GLITTER 5
 #define MAX_TIME_FOR_GLITTER_SEC 45
 #define MIN_TIME_FOR_GLITTER_SEC 5
+
+#define MQTT_POWER_SET "led/strip/power/set"
+#define MQTT_POWER_GET "led/strip/power/get"
+#define MQTT_POWER_STATUS "led/strip/power/status"
 
 void startGlitterMode();
 
@@ -41,6 +46,9 @@ bool gIsPowerOn = true;
 bool gIsPoweredOff = false;
 
 char hostString[16] = {0};
+
+ulong lastReconnectAttempt = 0;
+
 
 CRGB leds[NUM_LEDS];
 CRGB targetLeds[NUM_LEDS];
@@ -53,6 +61,9 @@ AbstractPattern * gCurrentPattern = NULL;
 AbstractPattern * gTargetPattern = NULL;
 
 AsyncWebServer server(80);
+
+WiFiClient espClient;
+PubSubClient client(espClient);
 
 
 AbstractPattern* nextPattern()
@@ -67,6 +78,57 @@ void announceHour() {
     gCurrentPattern = new AnnounceHour(NUM_LEDS);
     gTargetPattern = NULL;
 }
+
+
+
+void publishPower() {
+    if(gIsPowerOn) {
+        client.publish(MQTT_POWER_STATUS, "true");
+    } else {
+        client.publish(MQTT_POWER_STATUS, "false");
+    }
+
+}
+
+void subStuff() {
+    client.subscribe(MQTT_POWER_GET);
+    client.subscribe(MQTT_POWER_SET);
+}
+/**
+ * MQTT callback
+ * @param topic
+ * @param payload
+ * @param length
+ */
+void callback(char* topic, byte* payload, unsigned int length) {
+    Serial.print("Message arrived [");
+    Serial.print(topic);
+    Serial.print("] ");
+    for (int i = 0; i < length; i++) {
+        Serial.print((char)payload[i]);
+    }
+    Serial.println();
+
+    String theTopic = String(topic);
+    if(theTopic == MQTT_POWER_SET) {
+        // first char will be "t" cause it is "true"
+        if ((char) payload[0] == 't') {
+            gIsPowerOn = true;
+            // but actually the LED is on; this is because
+            // it is acive low on the ESP-01)
+        } else if ((char) payload[0] == 's') {
+            publishPower();
+        } else {
+            gIsPowerOn = false;
+        }
+        publishPower();
+    }
+
+    if(theTopic == MQTT_POWER_GET) {
+        publishPower();
+    }
+}
+
 
 void setAlarms() {
     Serial.println("Setting alarms...");
@@ -114,15 +176,27 @@ void setupWebServer() {
     Serial.println("Setting up Web Server...");
     ArRequestHandlerFunction onPowerOnHandler = [](AsyncWebServerRequest *request){
         gIsPowerOn = true;
-        request->send(200, "text/json", "{'power':true}");
+        publishPower();
+
+        request->send(200, "text/plain", "ON");
     };
     server.on("/power/on", HTTP_GET, onPowerOnHandler);
 
     ArRequestHandlerFunction onPowerOffHandler = [](AsyncWebServerRequest *request){
         gIsPowerOn = false;
-        request->send(200, "text/json", "{'power':false}");
+        publishPower();
+
+        request->send(200, "text/plain", "OFF");
     };
     server.on("/power/off", HTTP_GET, onPowerOffHandler);
+
+    ArRequestHandlerFunction onPowerStateHandler = [](AsyncWebServerRequest *request){
+        if(gIsPowerOn)
+            request->send(200, "text/plain", "ON");
+        else
+            request->send(200, "text/plain", "OFF");
+    };
+    server.on("/power", HTTP_GET, onPowerStateHandler);
 
     ArRequestHandlerFunction onBrightnessHandler = [](AsyncWebServerRequest *request){
         AsyncWebParameter* param = request->getParam("brightness");
@@ -147,6 +221,14 @@ void setupWiFi() {
     });
     e1 = WiFi.onStationModeGotIP(onSTAGotIP);// As soon WiFi is connected, start NTP Client
     e2 = WiFi.onStationModeDisconnected(onSTADisconnected);
+
+    Serial.print("Waiting for Wifi");
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(100);
+        Serial.print(".");
+    }
+    Serial.println("");
+    Serial.println("WiFi connected");
 
 }
 
@@ -206,21 +288,23 @@ void setupFastLed() {//gPatterns.push_back(new MotionLight(NUM_LEDS));
     gCurrentPattern = new TestPattern(NUM_LEDS);
 }
 
+
+boolean reconnect() {
+    if (client.connect(hostString)) {
+        publishPower();
+        // ... and resubscribe
+        subStuff();
+    }
+    return client.connected();
+}
+
+
 void setup() {
     sprintf(hostString, "ESP_%06X", ESP.getChipId());
 
     Serial.begin(9600);
     setupWiFi();
-
-    Serial.print("Waiting for Wifi");
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.println("");
-    Serial.println("WiFi connected");
-
-    delay(3000);
+    delay(500);
 
     setupMDNS();
     setupWebServer();
@@ -231,7 +315,12 @@ void setup() {
     setSyncProvider([]()->time_t {
         NTP.getTime();
     });
+    client.setServer(mqtt_server, 1883);
+    client.setCallback(callback);
+    lastReconnectAttempt = 0;
 
+    delay(100);
+    reconnect();
 }
 
 void renderFrame() {
@@ -281,6 +370,7 @@ void renderFrame() {
 
 void loop()
 {
+    yield();
     Alarm.delay(0);
     if(gIsPowerOn) {
         gIsPoweredOff=false;
@@ -296,7 +386,24 @@ void loop()
             gIsPoweredOff = true;
         }
     }
+    if(WiFi.status() != WL_CONNECTED) {
+        setupWiFi();
+    }
 
+    yield();
+
+    if (!client.loop()) {
+        ulong now = millis();
+        if (now - lastReconnectAttempt > 5000) {
+            Serial.print(client.state());
+            Serial.println(" Attempting to reconnect to MQTT");
+            lastReconnectAttempt = now;
+            // Attempt to reconnect
+            if (reconnect()) {
+                lastReconnectAttempt = 0;
+            }
+        }
+    }
     // insert a delay to keep the framerate modest
     FastLED.delay(1000/FRAMES_PER_SECOND);
 }

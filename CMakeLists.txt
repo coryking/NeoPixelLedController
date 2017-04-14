@@ -51,4 +51,4 @@ add_custom_target(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(${PROJECT_NAME} ${SRC_LIST} src/PalettePattern.cpp src/PalettePattern.h src/ReversablePattern.h src/JugglePattern.h src/BpmPattern.h src/RollingPattern.h)
+add_executable(${PROJECT_NAME} ${SRC_LIST})
