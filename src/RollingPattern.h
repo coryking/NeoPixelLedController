@@ -12,20 +12,23 @@
 #define INVERSE_WIDTH 10
 
 class RollingPattern : public HuePattern {
+protected:
+    CRGBPalette16 palette;
+
 public:
     virtual uint16_t readFrame(CRGB *buffer, ulong time) {
 
         HuePattern::readFrame(buffer,time);
         uint8_t BeatsPerMinute = 62;
-        CRGBPalette16 palette = CloudColors_p;
         uint8_t beat = beatsin8( BeatsPerMinute, 220, 255);
         for( int i = 0; i < getNumLeds(); i++) { //9948
-            uint8_t brightness = abs(127 - (beat - gHue + (i * INVERSE_WIDTH)) % 255);
+            uint8_t brightness = 255; // abs(127 - (beat - gHue + (i * INVERSE_WIDTH)) % 255);
 
-            buffer[i] = ColorFromPalette(palette, gHue+(i*2), brightness);
+            buffer[i] = ColorFromPalette(palette, gHue+(i), brightness);
         }
     }
 
-    RollingPattern(uint16 numLeds) : HuePattern(numLeds) {}
+    RollingPattern(uint16 numLeds, CRGBPalette16 thePallete) : HuePattern(numLeds) {palette = thePallete;}
 };
+
 #endif //NEOPIXELLEDCONTROLLER_ROLLINGPATTERN_H

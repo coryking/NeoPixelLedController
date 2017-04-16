@@ -7,14 +7,19 @@
 uint16_t TestPattern::readFrame(CRGB *buffer, ulong time) {
     static int pattern = 0;
 
-    EVERY_N_SECONDS(2) {
+    EVERY_N_SECONDS(EACH_TEST_TIME) {
         pattern++;
     }
-    switch(pattern % 5) {
+    switch(pattern % NUM_TESTS) {
         case 0:
             fill_solid(buffer, getNumLeds(), CRGB::Black);
 
-            buffer[0] = CRGB::White;
+            buffer[FIRST_LED_OFFSET] = CRGB::White;
+            buffer[WEIRD_PART_OFFSET] = CRGB::White;
+            buffer[VERTICAL_PART_OFFSET ] = CRGB::White;
+
+            buffer[FIRE_ESCAPE_OFFSET] = CRGB::White;
+            buffer[FIRE_ESCAPE_OFFSET -1] = CRGB::White;
             buffer[CORNER_1 - 1] = CRGB::White;
             buffer[CORNER_1] = CRGB::White;
             buffer[CORNER_2 - 1] = CRGB::White;

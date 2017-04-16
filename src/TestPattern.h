@@ -8,7 +8,9 @@
 #include <FastLED.h>
 #include "AbstractPattern.h"
 
-#define TEST_RUNTIME 10 * 1000
+#define EACH_TEST_TIME 1
+#define NUM_TESTS 5
+#define TEST_RUNTIME EACH_TEST_TIME * NUM_TESTS * 1000
 
 class TestPattern : public AbstractPattern {
 private:

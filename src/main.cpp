@@ -25,7 +25,9 @@ FASTLED_USING_NAMESPACE
 //#define CLK_PIN   4
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
-#define NUM_LEDS    171
+// 102 + 171
+#define NUM_LEDS    273
+
 #define BRIGHTNESS          255
 #define FRAMES_PER_SECOND  120
 
@@ -270,15 +272,18 @@ void setupMDNS() {
 
 void setupFastLed() {//gPatterns.push_back(new MotionLight(NUM_LEDS));
 
-    gPatterns.push_back(new Rainbow(NUM_LEDS));
-    gPatterns.push_back(new FireOnFireEscape<FirePattern>(NUM_LEDS));
     gPatterns.push_back(new Sinelon(NUM_LEDS));
+    gPatterns.push_back(new Rainbow(NUM_LEDS));
     gPatterns.push_back(new Confetti(NUM_LEDS));
-    gPatterns.push_back(new FireOnFireEscape<PalettePattern>(NUM_LEDS));
-    gPatterns.push_back(new FireOnFireEscape<RainbowFirePattern>(NUM_LEDS));
     gPatterns.push_back(new Noise(NUM_LEDS));
     gPatterns.push_back(new JugglePattern(NUM_LEDS));
-    gPatterns.push_back(new RollingPattern(NUM_LEDS));
+    gPatterns.push_back(new RollingPattern(NUM_LEDS, OceanColors_p));
+    gPatterns.push_back(new RollingPattern(NUM_LEDS, CloudColors_p));
+    gPatterns.push_back(new RollingPattern(NUM_LEDS, ForestColors_p));
+
+    gPatterns.push_back(new FireOnFireEscape<FirePattern>(NUM_LEDS));
+    gPatterns.push_back(new FireOnFireEscape<PalettePattern>(NUM_LEDS));
+    gPatterns.push_back(new FireOnFireEscape<RainbowFirePattern>(NUM_LEDS));
 
     // tell FastLED about the LED strip configuration
     FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
