@@ -281,9 +281,9 @@ void setupFastLed() {//gPatterns.push_back(new MotionLight(NUM_LEDS));
     gPatterns.push_back(new RollingPattern(NUM_LEDS, CloudColors_p));
     gPatterns.push_back(new RollingPattern(NUM_LEDS, ForestColors_p));
 
-    gPatterns.push_back(new FireOnFireEscape<FirePattern>(NUM_LEDS));
+    //gPatterns.push_back(new FireOnFireEscape<FirePattern>(NUM_LEDS));
     gPatterns.push_back(new FireOnFireEscape<PalettePattern>(NUM_LEDS));
-    gPatterns.push_back(new FireOnFireEscape<RainbowFirePattern>(NUM_LEDS));
+    //gPatterns.push_back(new FireOnFireEscape<RainbowFirePattern>(NUM_LEDS));
 
     // tell FastLED about the LED strip configuration
     FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
