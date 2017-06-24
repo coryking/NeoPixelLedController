@@ -15,6 +15,8 @@
 #include <ESPAsyncWebServer.h>
 #include <PubSubClient.h>
 
+#include <Task.h>
+
 FASTLED_USING_NAMESPACE
 
 #if defined(FASTLED_VERSION) && (FASTLED_VERSION < 3001000)
@@ -29,7 +31,7 @@ FASTLED_USING_NAMESPACE
 #define NUM_LEDS    273
 
 #define BRIGHTNESS          255
-#define FRAMES_PER_SECOND  120
+#define FRAMES_PER_SECOND  240
 
 #define TRANSITION_DURATION 4000
 
@@ -67,6 +69,8 @@ AsyncWebServer server(80);
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+
+TaskManager taskManager;
 
 AbstractPattern* nextPattern()
 {
@@ -272,18 +276,20 @@ void setupMDNS() {
 
 void setupFastLed() {//gPatterns.push_back(new MotionLight(NUM_LEDS));
 
-    gPatterns.push_back(new Sinelon(NUM_LEDS));
     gPatterns.push_back(new Rainbow(NUM_LEDS));
-    gPatterns.push_back(new Confetti(NUM_LEDS));
+    gPatterns.push_back(new RollingPattern(NUM_LEDS, RainbowColors_p));
+    gPatterns.push_back(new RollingPattern(NUM_LEDS, RainbowStripeColors_p));
+    gPatterns.push_back(new Sinelon(NUM_LEDS));
+//    gPatterns.push_back(new Confetti(NUM_LEDS));
     gPatterns.push_back(new Noise(NUM_LEDS));
-    gPatterns.push_back(new JugglePattern(NUM_LEDS));
-    gPatterns.push_back(new RollingPattern(NUM_LEDS, OceanColors_p));
-    gPatterns.push_back(new RollingPattern(NUM_LEDS, CloudColors_p));
-    gPatterns.push_back(new RollingPattern(NUM_LEDS, ForestColors_p));
-
-    //gPatterns.push_back(new FireOnFireEscape<FirePattern>(NUM_LEDS));
-    gPatterns.push_back(new FireOnFireEscape<PalettePattern>(NUM_LEDS));
-    //gPatterns.push_back(new FireOnFireEscape<RainbowFirePattern>(NUM_LEDS));
+//    gPatterns.push_back(new JugglePattern(NUM_LEDS));
+//    gPatterns.push_back(new RollingPattern(NUM_LEDS, OceanColors_p));
+//    gPatterns.push_back(new RollingPattern(NUM_LEDS, CloudColors_p));
+//    gPatterns.push_back(new RollingPattern(NUM_LEDS, ForestColors_p));
+//
+//    //gPatterns.push_back(new FireOnFireEscape<FirePattern>(NUM_LEDS));
+//    gPatterns.push_back(new FireOnFireEscape<PalettePattern>(NUM_LEDS));
+//    gPatterns.push_back(new FireOnFireEscape<RainbowFirePattern>(NUM_LEDS));
 
     // tell FastLED about the LED strip configuration
     FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -411,4 +417,5 @@ void loop()
     }
     // insert a delay to keep the framerate modest
     FastLED.delay(1000/FRAMES_PER_SECOND);
+    ArduinoOTA.handle();
 }

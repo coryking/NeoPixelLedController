@@ -45,7 +45,7 @@ public:
 
     AbstractPattern(uint16 numLeds);
 
-    void resetRuntime();
+    virtual void resetRuntime();
 
     ulong getRuntime();
     /**
@@ -66,15 +66,22 @@ public:
 class HuePattern : public AbstractPattern {
 protected:
     uint8_t gHue = 0; // rotating "base color" used by many of the patterns
+    uint8_t gHueDelay = 20;
 public:
     virtual uint16_t readFrame(CRGB *buffer, ulong time) {
-        EVERY_N_MILLISECONDS(20) {
+        EVERY_N_MILLISECONDS(gHueDelay) {
             gHue++;
         }
     }
 
+    virtual void resetRuntime() {
+        gHueDelay = random(15, 50);
+
+        AbstractPattern::resetRuntime();
+    }
     HuePattern(uint16 numLeds) : AbstractPattern(numLeds) {
         gHue = random(0,255);
+        gHueDelay = random(15, 50);
     }
 };
 

@@ -30,3 +30,8 @@ Noise::Noise(uint16 numLeds) : AbstractPattern(numLeds) {
     targetPalette = OceanColors_p;
     dist = random16(12345);
 }
+
+void Noise::resetRuntime() {
+    AbstractPattern::resetRuntime();
+    minRuntime = DEFAULT_DURATION + random(0, DEFAULT_DURATION * 10);
+}

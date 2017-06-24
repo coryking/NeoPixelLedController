@@ -15,10 +15,17 @@ private:
     uint8_t maxChanges = 48;
     CRGBPalette16 currentPalette; //(CRGB::Black);
     CRGBPalette16 targetPalette; //(OceanColors_p);
+    uint16_t  minRuntime = DEFAULT_DURATION;
 public:
     virtual uint16_t readFrame(CRGB *buffer, ulong time);
 
     Noise(uint16 numLeds);
+
+    virtual void resetRuntime();
+
+    virtual uint16_t getMinRuntime() {
+        return minRuntime;
+    }
 };
 
 
